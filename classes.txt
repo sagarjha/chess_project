@@ -1,0 +1,43 @@
+class:- chess_piece
+private fields:-
+	status (0 or 1 denoting whether the piece is on the board or captured)
+	position (string of two characters denoting the coordinates, accessed only when the piece is alive)
+	image (string which will store the name of the image of the chess_piece)
+public methods:-
+       getPosition (returns "" if the piece is dead, position otherwise)
+       setPosition (moves the piece to the square passed on it)
+       loadimage
+
+class:- pawn,rook,knight,bishop,queen,king ---> inherits from chess_piece
+public methods:-
+       move
+
+class:- board
+private fields:-
+	color1
+	color2
+	squares (vector of boxes, where each element belongs to the cartesian product of the sets (a,b,c,d,e,f,g,h) and (1,2,3,4,5,6,7,8)
+private methods:-
+	legal? (checks the legality of the position arising out of a move)
+public methods:-
+       move_piece (move a piece from one box to another, will modify the squares vector)
+       promote_piece (in case of a pawn just promoted)
+       remove_piece (in case of a capture, replace the piece that is captured by a piece which captures)
+       
+class:- box
+private fields:-
+	file
+	rank
+	piece (null in case the box is empty)
+public methods:-
+       get-file
+       get-rank
+       get-piece
+       place-piece (place a new piece to this position)
+
+class:- main (simulates the whole game)
+public methods:- 
+       load-initial-position (from the file initialPosition.bn)
+       play-next-move		 
+       get-all-possible-moves
+       detect-check
