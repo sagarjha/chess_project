@@ -1,4 +1,0 @@
-#lang racket
-
-(define (detect-check l move)
-  

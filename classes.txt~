@@ -1,6 +1,0 @@
-class:- chess_piece
-fields:-
-	status (0 or 1 denoting whether the piece is on the board or captured)
-	position (string of two characters denoting the coordinates)
-	image (string which will store the name of the image of the chess_piece)
-	

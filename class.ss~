@@ -1,7 +1,0 @@
-#lang racket
-
-(define chess_piece%
-  (class object%
-	 (define status 0);
-	 (init pos);
-	 (define position);
