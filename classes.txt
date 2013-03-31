@@ -1,14 +1,14 @@
-class:- chess_piece
+class:- chess-piece
 private fields:-
 	status (0 or 1 denoting whether the piece is on the board or captured)
 	position (string of two characters denoting the coordinates, accessed only when the piece is alive)
-	image (string which will store the name of the image of the chess_piece)
+	image (string which will store the name of the image of the chess-piece)
 public methods:-
        getPosition (returns "" if the piece is dead, position otherwise)
        setPosition (moves the piece to the square passed on it)
        loadimage
 
-class:- pawn,rook,knight,bishop,queen,king ---> inherits from chess_piece
+class:- pawn,rook,knight,bishop,queen,king ---> inherits from chess-piece
 public methods:-
        move
 
@@ -20,9 +20,9 @@ private fields:-
 private methods:-
 	legal? (checks the legality of the position arising out of a move)
 public methods:-
-       move_piece (move a piece from one box to another, will modify the squares vector)
-       promote_piece (in case of a pawn just promoted)
-       remove_piece (in case of a capture, replace the piece that is captured by a piece which captures)
+       move-piece (move a piece from one box to another, will modify the squares vector)
+       promote-piece (in case of a pawn just promoted)
+       remove-piece (in case of a capture, replace the piece that is captured by a piece which captures)
        
 class:- box
 private fields:-

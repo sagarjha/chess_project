@@ -1,6 +1,7 @@
 #lang racket
 
 (require "lc.ss")
+(require "initialPosition.ss")
 
 (define chess-piece%
   (class object%
@@ -99,3 +100,24 @@
 			 y <- (list (- rank 1) rank (+ rank 1))
 			 * (> x 0) * (< x 9) * (> y 0) * (< y 9)
 			 * (or (not (= x file)) (not (= y file)))))))))
+
+(define (make-2d-vector r c)
+  (build-vector r (lambda (x) (make-vector c #f))))
+
+(define (2d-vector-ref vec r c)
+  (vector-ref (vector-ref vec r) c))
+
+(define (2d-vector-set! vec r c val)
+  (vector-set! (vector-ref vec r) c val))
+
+(define board%
+  (class object%
+	 (super-new)
+	 (define chess-board (make-2d-vector 8 8))
+	 ;; (define (set-up)
+	 ;;   (let* ([posn-for-white (car initial-position)]
+	 ;; 	  [posn-for-black (cdr initial-position)])
+	 ;;     (set-up
+	 (define/public (print)
+	   (display chess-board)
+	   (newline))))
