@@ -135,11 +135,71 @@
 (define board%
   (class object%
 	 (super-new)
+	 (define board-position initial-position)
+	 (define move 'white)
 	 (define chess-board (make-2d-vector 8 8))
+	 (define dummy-pos (cons 0 0))
 	 ;; (define (set-up)
 	 ;;   (let* ([posn-for-white (car initial-position)]
 	 ;; 	  [posn-for-black (cdr initial-position)])
 	 ;;     (set-up
+	 (define dummy-pawn (make-object pawn% dummy-pos))
+	 (define dummy-knight (make-object knight% dummy-pos))
+	 (define dummy-rook (make-object rook% dummy-pos))
+	 (define dummy-bishop (make-object bishop% dummy-pos))
+	 (define dummy-queen (make-object queen% dummy-pos))
+	 (define dummy-king (make-object king% dummy-pos))
+	 (define (get-dummy symbol pos)
+	   (cond [(eq? symbol 'P) (begin
+				    (send dummy-pawn set-position! pos)
+				    dummy-pawn)]
+		 [(eq? symbol 'N) (begin
+				    (send dummy-knight set-position! pos)
+				    dummy-knight)]
+		 [(eq? symbol 'R) (begin
+				    (send dummy-rook set-position! pos)
+				    dummy-rook)]
+		 [(eq? symbol 'B) (begin
+				    (send dummy-bishop set-position! pos)
+				    dummy-bishop)]
+		 [(eq? symbol 'Q) (begin
+				    (send dummy-queen set-position! pos)
+				    dummy-queen)]
+		 [(eq? symbol 'K) (begin
+				    (send dummy-king set-position! pos)
+				    dummy-king)]))
+	 (define (change-pos board-pos piece init-pos pos)
+	   (define (change-pos-h lst init-pos pos)
+	     (if (equal? (car lst) init-pos)
+		 (cons pos (cdr lst))
+		 (cons (car lst) (change-pos-h (cdr lst) init-pos pos))))
+	   (if (eq? (car (car board-pos)) piece)
+	       (let* ([changed-list (change-pos-h (cdr (car board-pos)) init-pos pos)])
+		 (cons (cons piece changed-list) (cdr board-pos)))
+	       (cons (car board-pos) (change-pos (cdr board-pos) piece init-pos pos))))
+
+	 (define (give-all-moves)
+	   (let* ([piece-positions (if (eq? move 'white)
+				       (car board-position)
+				       (cdr board-position))])
+	     (map (lambda (x) (map (lambda (y) 
+					  (if (eq? (car x) 'P)
+					      (cons (car x) (cons y (send (get-dummy (car x) y) give-all-moves move)))
+					      (cons (car x) (cons y (send (get-dummy (car x) y) give-all-moves)))))
+					  (cdr x))) piece-positions)))
+	 (define (process lst)
+	   (let* ([board-pos (if (eq? move 'white) (car board-position)
+				 (cdr board-position))])
+	     (foldr (lambda (x y) 
+		      (cons (change-pos board-pos (car lst) (cadr lst) x) y))
+		      (list)
+		      (cddr lst))))
+	 (define/public (give-all-positions)
+	   (let* ([possible-moves (give-all-moves)])
+	     (map (lambda (x) (map process x)) possible-moves)))
 	 (define/public (print)
 	   (display chess-board)
 	   (newline))))
+
+(define B (make-object board%))
+(send B give-all-positions)
