@@ -19,8 +19,11 @@
 (define pawn%
   (class chess-piece%
 	 (inherit-field pos)
+	 (define turn 'white)
 	 (super-new)
-	 (define/public (give-all-moves turn)
+	 (define/public (set-move! move)
+	   (set! turn move))
+	 (define/public (give-all-moves)
 	   (let* ([pos (send this get-position)]
 		  [file (car pos)]
 		  [rank (cdr pos)])
@@ -152,6 +155,7 @@
 	 (define (get-dummy symbol pos)
 	   (cond [(eq? symbol 'P) (begin
 				    (send dummy-pawn set-position! pos)
+				    (send dummy-pawn set-move! move)
 				    dummy-pawn)]
 		 [(eq? symbol 'N) (begin
 				    (send dummy-knight set-position! pos)
@@ -178,25 +182,24 @@
 		 (cons (cons piece changed-list) (cdr board-pos)))
 	       (cons (car board-pos) (change-pos (cdr board-pos) piece init-pos pos))))
 
-	 (define (give-all-moves)
-	   (let* ([piece-positions (if (eq? move 'white)
-				       (car board-position)
-				       (cdr board-position))])
-	     (map (lambda (x) (map (lambda (y) 
-					  (if (eq? (car x) 'P)
-					      (cons (car x) (cons y (send (get-dummy (car x) y) give-all-moves move)))
-					      (cons (car x) (cons y (send (get-dummy (car x) y) give-all-moves)))))
-					  (cdr x))) piece-positions)))
-	 (define (process lst)
-	   (let* ([board-pos (if (eq? move 'white) (car board-position)
-				 (cdr board-position))])
-	     (foldr (lambda (x y) 
-		      (cons (change-pos board-pos (car lst) (cadr lst) x) y))
-		      (list)
-		      (cddr lst))))
+	 (define (process piece-set half-position)
+	   (foldr (lambda (pos pos-lst) 
+		    (append (foldr (lambda (val lst) 
+				     (cons (change-pos half-position (car piece-set) pos val) lst))
+				   (list) (send (get-dummy (car piece-set) pos) give-all-moves)) pos-lst))
+		  (list) (cdr piece-set)))
+
 	 (define/public (give-all-positions)
-	   (let* ([possible-moves (give-all-moves)])
-	     (map (lambda (x) (map process x)) possible-moves)))
+	   (let* ([half-position (if (eq? move 'white)
+				     (car board-position)
+				     (cdr board-position))])
+	     (if (eq? move 'white)
+		 (map (lambda (x) (cons x (cdr board-position)))
+		      (foldr (lambda (val lst) (append (process val half-position) lst))
+			     (list) half-position))
+		 (map (lambda (x) (cons (car board-position) x))
+		      (foldr (lambda (val lst) (append (process val half-position) lst))
+			     (list) half-position)))))
 	 (define/public (print)
 	   (display chess-board)
 	   (newline))))
