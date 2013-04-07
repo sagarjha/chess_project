@@ -218,7 +218,7 @@
   (class object%
 	 (super-new)
 	 (define board-position initial-position)
-	 (define move 'white)
+	 (init-field (move 'white))
 	 (define chess-board (make-2d-vector 8 8))
 	 (define dummy-pos (cons 0 0))
 	 (define dummy-pawn (make-object pawn% dummy-pos))
@@ -241,6 +241,8 @@
 	     (setup-white (car board-position))
 	     (setup-black (cdr board-position))
 	     (print)))
+
+	 (setup)
 
 	 (define (get-dummy symbol pos)
 	   (cond [(eq? symbol 'P) (begin
@@ -290,14 +292,35 @@
 		 (map (lambda (x) (cons (car board-position) x))
 		      (foldr (lambda (val lst) (append (process val half-position) lst))
 			     (list) half-position)))))
+
+	 (define/public (change board-pos)
+	   (begin
+	     (set! chess-board (make-2d-vector 8 8))
+	     (set! board-position board-pos)
+	     (setup)))
+
 	 (define/public (print)
 	   (display chess-board)
 	   (newline))))
 
-(define B (make-object board%))
-(send B give-all-positions)
-(newline)
-(newline)
-(newline)
-(send B print)
-(send B setup)
+(define chess%
+  (class object%
+	 (super-new)
+	 (define chess-board (new board%))
+	 (define (flip turn)
+	   (if (eq? turn 'white)
+	       'black 'white))
+	 (define/public (computer-play turn)
+	   (begin
+	     (set-field! move chess-board turn)
+	     (let* ([possible-positions (send chess-board give-all-positions)])
+	       (begin
+		 (send chess-board change (car possible-positions))
+		 (computer-play (flip turn))))))
+	 (define/public (human-play turn)
+	   (begin
+	     (let* ([move (read)])
+	       (computer-play (flip turn)))))
+	 (computer-play 'white)))
+
+(define C (new chess%))
