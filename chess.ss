@@ -11,10 +11,12 @@
 	 (define status 0);
 	 (init-field pos);
 	 (define position pos);
+	 
 	 (define/public (get-position)
 	   (if (eq? status 0)
 	       position
 	       (error "The piece is not active")))
+	 
 	 (define/public (resolvable? half-position new-pos)
 	   (foldr (lambda (val pred) (if pred
 					 (foldr (lambda (val-one pred-one)
@@ -22,8 +24,10 @@
 						#t (cdr val))
 					 #f))
 		  #t half-position))
+	 
 	 (define/public (set-position! pos)
 	   (set! position pos))
+	 
 	 (define/public (filter-posn pair-position lst)
 	   (take-while (lambda (new-move) 
 			 (resolvable? (car pair-position) new-move))
@@ -264,7 +268,7 @@
 				    (send dummy-king set-position! pos)
 				    dummy-king)]))
 
-	 (define (change-pos board-pos piece init-pos pos)
+	 (define/public (change-pos board-pos piece init-pos pos)
 	   (define (change-pos-h lst init-pos pos)
 	     (if (equal? (car lst) init-pos)
 		 (cons pos (cdr lst))
@@ -307,20 +311,27 @@
   (class object%
 	 (super-new)
 	 (define chess-board (new board%))
+
 	 (define (flip turn)
 	   (if (eq? turn 'white)
 	       'black 'white))
+
 	 (define/public (computer-play turn)
 	   (begin
 	     (set-field! move chess-board turn)
 	     (let* ([possible-positions (send chess-board give-all-positions)])
 	       (begin
 		 (send chess-board change (car possible-positions))
-		 (computer-play (flip turn))))))
+		 (human-play (flip turn))))))
+
 	 (define/public (human-play turn)
 	   (begin
-	     (let* ([move (read)])
-	       (computer-play (flip turn)))))
+	     (let* ([move (read)]
+		    [new-board-position (send chess-board change-pos (first move) (second move) (third move))])
+	       (begin
+		 (send chess-board change new-board-position)
+		 (computer-play (flip turn))))))
+
 	 (computer-play 'white)))
 
 (define C (new chess%))
