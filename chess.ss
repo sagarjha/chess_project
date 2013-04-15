@@ -221,7 +221,7 @@
 (define board%
   (class object%
 	 (super-new)
-	 (define board-position initial-position)
+	 (init-field (board-position initial-position))
 	 (init-field (move 'white))
 	 (define chess-board (make-2d-vector 8 8))
 	 (define dummy-pos (cons 0 0))
@@ -278,25 +278,37 @@
 		 (cons (cons piece changed-list) (cdr board-pos)))
 	       (cons (car board-pos) (change-pos (cdr board-pos) piece init-pos pos))))
 
-	 (define (process piece-set half-position)
+	 (define (capture other-half-position piece init-pos pos)
+	   (define (capture-h lst init-pos pos)
+	     (cond [(null? lst) lst]
+		   [(equal? (car lst) pos) (cdr lst)]
+		   [else (cons (car lst) (capture-h (cdr lst) init-pos pos))]))
+	   (let* ([changed-list (capture-h (cdr (car other-half-position)) init-pos pos)])
+		 (if (null? changed-list)
+		     (cdr other-half-position)
+		     (cons (cons piece changed-list) (cdr other-half-position)))))
+
+	 (define (process piece-set half-position other-half-position)
 	   (foldr (lambda (pos pos-lst) 
 		    (append (foldr (lambda (val lst) 
-				     (cons (change-pos half-position (car piece-set) pos val) lst))
+				     (if (eq? move 'white)
+					 (cons (cons (change-pos half-position (car piece-set) pos val) 
+						     (capture other-half-position (car piece-set) pos val)) lst)
+					 (cons (cons (capture other-half-position (car piece-set) pos val)
+					       (change-pos half-position (car piece-set) pos val)) lst)))
 				   (list) (send (get-dummy (car piece-set) pos) give-all-moves board-position move)) pos-lst))
 		  (list) (cdr piece-set)))
 
 	 (define/public (give-all-positions)
 	   (let* ([half-position (if (eq? move 'white)
 				     (car board-position)
-				     (cdr board-position))])
-	     (if (eq? move 'white)
-		 (map (lambda (x) (cons x (cdr board-position)))
-		      (foldr (lambda (val lst) (append (process val half-position) lst))
-			     (list) half-position))
-		 (map (lambda (x) (cons (car board-position) x))
-		      (foldr (lambda (val lst) (append (process val half-position) lst))
-			     (list) half-position)))))
-
+				     (cdr board-position))]
+		  [other-half-position (if (eq? move 'white)
+					   (cdr board-position)
+					   (car board-position))])
+	     (foldr (lambda (val lst) (append (process val half-position other-half-position) lst))
+	     		 (list) half-position)))
+	 
 	 (define/public (change board-pos)
 	   (begin
 	     (set! chess-board (make-2d-vector 8 8))
