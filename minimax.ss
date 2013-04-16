@@ -1,62 +1,69 @@
 #lang racket
+(require "chess.ss")
 
-(struct node (posn children alpha beta) #:transparent #:mutable)
-;Traditionally, posn holds the node value. 
-;Here it will hold a board position, the children will be simulated by calling give-all-moves on this position
-;Children will no longer be a field of this struct
-;And the value of this position will be calculated only when called for (inside the two alpha-beta functions)
+(struct node (posn alpha beta) #:transparent #:mutable)
 
-;TO ELIMINATE THE MEMBER CHILDREN OF THE NODE STRUCT
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;ONLY MAJOR CHANGE TO BE DONE- CHANGE THE MOVE- IT CURRENTLY IS EXCLUSIVELY WHITE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
 (define inf 10000)
-(define tree (node 1 
-                   (list 
-                    (node 2 (list (node 200 '() (- 0 inf) inf) (node 6 '() (- 0 inf) inf)) (- 0 inf) inf) 
-                    (node 3 (list (node 66 '() (- 0 inf) inf) (node 7 '() (- 0 inf) inf)) (- 0 inf) inf)
-                    (node 4 (list (node 66 '() (- 0 inf) inf) (node 9 '() (- 0 inf) inf)) (- 0 inf) inf)
-                    (node 5 (list (node 66 '() (- 0 inf) inf) (node 8 '() (- 0 inf) inf)) (- 0 inf) inf)
-                    (node 6 (list (node 66 '() (- 0 inf) inf) (node 10 '() (- 0 inf) inf)) (- 0 inf) inf))
-                   (- 0 inf) 
-                   inf))
+;(define tree (node 1 
+;                   (list 
+;                    (node 2 (list (node 200  (- 0 inf) inf) (node 6  (- 0 inf) inf)) (- 0 inf) inf) 
+;                    (node 3 (list (node 66  (- 0 inf) inf) (node 7  (- 0 inf) inf)) (- 0 inf) inf)
+;                    (node 4 (list (node 66  (- 0 inf) inf) (node 9  (- 0 inf) inf)) (- 0 inf) inf)
+;                    (node 5 (list (node 66  (- 0 inf) inf) (node 8  (- 0 inf) inf)) (- 0 inf) inf)
+;                    (node 6 (list (node 66  (- 0 inf) inf) (node 10  (- 0 inf) inf)) (- 0 inf) inf))
+;                   (- 0 inf) 
+;                   inf))
 
-;One workaround to generate the tree on-the-fly is to define a variable (say, "children") inside the alpha-beta functions,
-;whose value is the list of all board positions that are children of the current board "posn".
-;With this we need to replace all "(node-children curnode)" calls with "children" (except in the set! one), when it just has to be removed!
+;One workaround to generate the tree on-the-fly is to define a board inside (say, "minboard") inside the alpha-beta functions,
+;sending to which give-all-positions will return a list of positions for me.
+;With this we need to replace all "(node-children curnode)" calls with a "send give-all-positions to minboard".
 (define (alpha-beta-max curnode depthleft)
+  (define minboard (new board% (board-position (node-posn curnode)) (move 'white)));CHANGE THE WHITE
   (define (one-child-check remaining-children)
     (if (null? remaining-children) (node-alpha curnode)
-    (let* ([child (car remaining-children)]
+    (let* ([childposn (car remaining-children)]
+           [child (node childposn (node-alpha curnode) (node-alpha curnode))]
            [score (alpha-beta-min child (- depthleft 1))])
       (cond [(>= score (node-beta curnode)) (node-beta curnode)]
             [(> score (node-alpha curnode)) (begin 
                                            (set-node-alpha! curnode score)
-                                           ;This set! call is only and only to update alpha. Can it be optimized?
                                            (one-child-check (cdr remaining-children)))]
             [else (one-child-check (cdr remaining-children))]))))
-  (if (or (= depthleft 0) (null? (node-children curnode))) (node-posn curnode) (one-child-check (node-children curnode))))
-;EVALUATE BOARD POSN HERE!!!
-
-
-
-;#################################################
-;VERY IMPORTANT- MAKE THE CALLS TO ANY OF THE FUNCTIONS WITH CURNODE= NEWLY CONSTRUCTED NODE WITH THE GIVEN POS, ALPHA AND BETA
-;#################################################
+  (let* ([list-of-child-posns (send minboard give-all-positions)]) 
+    (if (or (= depthleft 0) (null? list-of-child-posns)) 
+        (evaluate-posn (node-posn curnode)) 
+        (one-child-check list-of-child-posns))))
 
 (define (alpha-beta-min curnode depthleft)
+  (define minboard (new board% (board-position (node-posn curnode)) (move 'white)));CHANGE THE WHITE
   (define (one-child-check remaining-children)
     (if (null? remaining-children) (node-beta curnode)
-    (let* ([child (car remaining-children)]
+    (let* ([childposn (car remaining-children)]
+           [child (node childposn (node-alpha curnode) (node-alpha curnode))]
            [score (alpha-beta-max child (- depthleft 1))])
       (cond [(<= score (node-alpha curnode)) (node-alpha curnode)]
             [(< score (node-beta curnode)) (begin 
                                            (set-node-beta! curnode score)
                                            (one-child-check (cdr remaining-children)))]
             [else (one-child-check (cdr remaining-children))]))))
-  (if (or (= depthleft 0) (null? (node-children curnode))) (node-posn curnode) (one-child-check (node-children curnode))))
-;EVALUATE BOARD POSN HERE!!!
+(let* ([list-of-child-posns (send minboard give-all-positions)]) 
+    (if (or (= depthleft 0) (null? list-of-child-posns)) 
+        (evaluate-posn (node-posn curnode)) 
+        (one-child-check list-of-child-posns))))
 
 
 ;This one is a modified alpha-beta-max function which returns the position instead of the value
 (define (first-alpha-beta-max curnode depthleft)
+  (define minboard (new board% (board-position (node-posn curnode)) (move 'white)));CHANGE THE WHITE
   (define randomizer (random));Random number to facilitate selection of second-best move with some probability
   (define abfailparameter 0.97);This is to choose probabilistically (in case of alpha > beta) which move to take- the current one or one from the already found ones
   (define moves-found (make-vector 5 #f))
@@ -81,7 +88,8 @@
   (define (one-child-check remaining-children)
     (if (null? remaining-children) 
         (if (equal? (choose-move) #f) (vector-ref moves-found 0) (choose-move))
-    (let* ([child (car remaining-children)]
+    (let* ([childposn (car remaining-children)]
+           [child (node childposn (node-alpha curnode) (node-alpha curnode))]
            [score (alpha-beta-min child (- depthleft 1))])
       (cond [(>= score (node-beta curnode)) (if (and (> randomizer abfailparameter) 
                                                      (not (equal? #f (vector-ref moves-found 0))))
@@ -98,4 +106,34 @@
                                            ;(display moves-found) (newline) ;Trace output
                                            (one-child-check (cdr remaining-children)))]
             [else (one-child-check (cdr remaining-children))]))))
-  (if (or (= depthleft 0) (null? (node-children curnode))) (node-posn curnode) (one-child-check (node-children curnode))))
+  (let* ([list-of-child-posns (send minboard give-all-positions)]) 
+    (if (or (= depthleft 0) (null? list-of-child-posns)) 
+        (evaluate-posn (node-posn curnode)) 
+        (one-child-check list-of-child-posns))))
+
+;(define B (new board% (board-position random-position) (move 'white)))
+;(send B give-all-positions)
+
+
+
+
+(define random-pos (cons (list
+                          (list "P" (cons 1 2) (cons 2 2) (cons 3 2) (cons 4 2) (cons 5 4) (cons 6 2) (cons 7 2) (cons 8 2))
+                          (list "R" (cons 1 1) (cons 6 1))
+                          (list "N" (cons 2 1) (cons 6 3))
+                          (list "B" (cons 3 1) (cons 2 5))
+                          (list "Q" (cons 4 1))
+                          (list "K" (cons 7 1)))
+                         (list 
+                          (list "P" (cons 1 7) (cons 2 7) (cons 3 7) (cons 4 7) (cons 5 5) (cons 6 7) (cons 7 7) (cons 8 7))
+                          (list "R" (cons 1 8) (cons 8 8))
+                          (list "N" (cons 3 6) (cons 6 6))
+                          (list "B" (cons 3 8) (cons 6 8))
+                          (list "Q" (cons 4 8))
+                          (list "K" (cons 5 8)))))
+
+;(define tminboard (new board% (board-position random-pos) (move 'white)))
+
+(define (evaluate-posn x) 2)
+
+(define (get-best-move board-pos) (first-alpha-beta-max (node board-pos (- 0 inf) inf) 1));Last argument is tree depth. To change
