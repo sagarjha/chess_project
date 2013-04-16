@@ -1,5 +1,6 @@
 #lang racket
 (require "chess.ss")
+(require "evaluation.ss")
 
 (struct node (posn alpha beta) #:transparent #:mutable)
 
@@ -7,7 +8,9 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;ONLY MAJOR CHANGE TO BE DONE- CHANGE THE MOVE- IT CURRENTLY IS EXCLUSIVELY WHITE
+;MAJOR CHANGES TO BE DONE- 
+;1) CHANGE THE MOVE- IT CURRENTLY IS EXCLUSIVELY WHITE
+;2) CHANGE THE CALL TO EVALUATE SO THAT IT TAKES A "complete-position" OBJECT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -134,6 +137,5 @@
 
 ;(define tminboard (new board% (board-position random-pos) (move 'white)))
 
-(define (evaluate-posn x) 2)
 
 (define (get-best-move board-pos) (first-alpha-beta-max (node board-pos (- 0 inf) inf) 1));Last argument is tree depth. To change
