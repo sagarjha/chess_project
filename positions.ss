@@ -12,11 +12,28 @@
   (class object%
 	 (super-new)
 	 (init-field board-position)
+	 (init-field turn)
 	 (init-field move)
 	 (init-field scew)
 	 (init-field sceb)
 	 (init-field lcew)
-	 (init-field lceb)))
+	 (init-field lceb)
+	 (define/public (print)
+	   (begin
+	     (display board-position)
+	     (newline)
+	     (display turn)
+	     (newline)
+	     (display move)
+	     (newline)
+	     (display scew)
+	     (newline)
+	     (display sceb)
+	     (newline)
+	     (display lcew)
+	     (newline)
+	     (display lceb)
+	     (newline)))))
 
 (define random-position
   (cons
@@ -59,9 +76,9 @@
     (list "Q" (cons 4 1))
     (list "K" (cons 5 1)))
    (list
+    (list "N" (cons 3 6) (cons 5 7))
     (list "P" (cons 1 7) (cons 2 7) (cons 3 7) (cons 4 5) (cons 5 6) (cons 6 7) (cons 7 7) (cons 8 7))
     (list "R" (cons 1 8) (cons 8 8))
-    (list "N" (cons 3 6) (cons 5 7))
     (list "B" (cons 3 8) (cons 2 4))
     (list "Q" (cons 4 8))
     (list "K" (cons 5 8))
@@ -69,10 +86,10 @@
    ))
 
 (define initial-complete-position
-  (make-object complete-position% initial-position 'white #f #f #f #f))
+  (make-object complete-position% initial-position 'white (cons 0 0) #t #t #t #t))
 
 (define random-complete-position
-  (make-object complete-position% random-position 'white #f #f #f #f))
+  (make-object complete-position% random-position 'white (cons 0 0) #f #f #f #f))
 
 (define random-complete-position-1
-  (make-object complete-position% random-position-1 'black #t #t #t #t))
+  (make-object complete-position% random-position-1 'black (cons 0 0) #t #t #t #t))
