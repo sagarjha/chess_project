@@ -1,12 +1,6 @@
 #lang racket
 
-(provide random-position
-	 random-position-1
-	 complete-position%
-	 random-complete-position
-	 initial-position
-	 initial-complete-position
-	 random-complete-position-1)
+(provide (all-defined-out))
 
 (define complete-position%
   (class object%
@@ -85,6 +79,25 @@
     )
    ))
 
+(define random-position-2
+  (cons
+   (list
+    (list "P" (cons 5 7) (cons 5 2) (cons 6 2) (cons 7 2) (cons 8 2))
+    (list "R" (cons 8 1))
+    (list "N" (cons 2 1) (cons 7 1))
+    (list "B" (cons 6 1))
+    (list "Q" (cons 2 8) (cons 4 1))
+    (list "K" (cons 5 1)))
+   (list
+    (list "N" (cons 7 8))
+    (list "P" (cons 3 3) (cons 6 7) (cons 7 7) (cons 8 7))
+    (list "R" (cons 1 8) (cons 8 8))
+    (list "B" (cons 3 8) (cons 6 8))
+    (list "Q" (cons 4 2) (cons 1 1) (cons 4 8))
+    (list "K" (cons 4 7))
+    )
+   ))
+
 (define initial-complete-position
   (make-object complete-position% initial-position 'white (cons 0 0) #t #t #t #t))
 
@@ -93,3 +106,6 @@
 
 (define random-complete-position-1
   (make-object complete-position% random-position-1 'black (cons 0 0) #t #t #t #t))
+
+(define random-complete-position-2
+  (make-object complete-position% random-position-2 'white (cons 0 0) #t #f #t #t))

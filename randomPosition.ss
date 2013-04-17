@@ -1,8 +1,6 @@
 #lang racket
 
-(provide random-position
-	 complete-position
-	 random-complete-position)
+(provide (all-defined-out))
 
 (struct complete-position (board-position
 			   move

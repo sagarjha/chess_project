@@ -4,6 +4,7 @@
 (require "2D-vector.ss")
 (require "list-functions.ss")
 (require "positions.ss")
+(provide (all-defined-out))
 
 (define chess-piece%
   (class object%
@@ -98,9 +99,8 @@
   (class chess-piece%
 	 (super-new)
 	 (define/public (valid? board-position move pos new-pos)
-	   (begin
-             (if (member new-pos (give-all-moves board-position move pos))
-                 #t #f)))
+	   (if (member new-pos (give-all-moves board-position move pos))
+	       #t #f))
 
 	 (define/public (give-all-moves board-position move pos)
 	   (let* ([file (car pos)]
@@ -236,6 +236,8 @@
 	 (define (get-lcew) (get-field lcew complete-board-position))
 	 (define (get-lceb) (get-field lceb complete-board-position))
 
+	 
+
          (define (flip turn)
            (if (eq? turn 'white)
                'black
@@ -247,10 +249,29 @@
 		 [(eq? symbol "R") dummy-rook]
 		 [(eq? symbol "B") dummy-bishop]
 		 [(eq? symbol "Q") dummy-queen]
-		 [(eq? symbol "K") dummy-king]))
+		 [(eq? symbol "K") dummy-king]
+		 [else (error "Wrong symbol")]))
 
 	 (define (promote lst old-pos pos piece)
-	   (add-to-list (capture lst old-pos) piece pos))
+	   
+	   (define (capture2 lst pos)
+	     (define (check-if-empty one-piece-positions)
+	       (if (= (length one-piece-positions) 1)
+		   #t #f))
+	     (define (capture-h pos-set)
+	       (define piece (car pos-set))
+	       (cons piece (foldr (lambda (val processed-posns)
+				    (if (equal? val pos) processed-posns
+					(cons val processed-posns)))
+				  (list) (cdr pos-set))))
+	     (foldr (lambda (cur-elem processed-list) 
+		      (let* ([one-piece-pos (capture-h cur-elem)])
+			(if (check-if-empty one-piece-pos)
+			    processed-list
+			    (cons (capture-h cur-elem) processed-list))))
+		    (list) lst))
+
+	   (add-to-list (capture2 lst old-pos) piece pos))
 
 	 (define (add-to-list lst piece pos)
 	   (let* ([piece-set (map (lambda (x) (car x)) lst)])
@@ -261,7 +282,13 @@
 			      (cons val l)))
 			(list) lst)
 		 (cons (list piece pos) lst))))
-						     
+
+	 (define (promotion-handler move piece)
+	   (let* ([piece-promoted-position (promote (get-self-position)
+						    (second move) (third move) piece)])
+	     piece-promoted-position))
+	 
+
 	 (define/public (change-pos move)
 	   
 	   (define (change-piece-pos pos-list)
@@ -278,6 +305,7 @@
 	   (define piece (first move))
 	   (define prev-pos (second move))
 	   (define new-pos (third move))
+	   (define last-rank (if (eq? (get-turn) 'white) 8 1))
 	   (change-pos-h (get-self-position)))
 
 	 (define/public (change-pos2 board-pos move)
@@ -311,7 +339,7 @@
 				  (if (equal? val pos) processed-posns
 				      (cons val processed-posns)))
 				(list) (cdr pos-set))))
-	 
+	   
 	   (foldr (lambda (cur-elem processed-list) 
 		    (let* ([one-piece-pos (capture-h cur-elem)])
 		      (if (check-if-empty one-piece-pos)
@@ -326,7 +354,7 @@
 				       give-all-moves (get-board-position) (get-turn) cur-pos))
 			    evaluated-list))
 		  (list) (cdr one-piece-positions)))
-  
+	 
 	 (define/public (capturable? board-pos square var-turn)
 	   (foldr (lambda (elem res-f)
 	 	    (or (foldr (lambda (pos res)
@@ -335,15 +363,31 @@
 	 		       #f (cdr elem)) res-f))
 	 	  #f (get-enemy-position)))
 
+	 (define/public (capturable2? board-pos square var-turn)
+	   (define local-enemy-position
+	     (if (eq? var-turn 'white)
+		 (car board-pos)
+		 (cdr board-pos)))
+	   (foldr (lambda (elem res-f)
+	 	    (or (foldr (lambda (pos res)
+	 			 (or (send (get-dummy (car elem)) valid? 
+					   board-pos var-turn pos square) res))
+	 		       #f (cdr elem)) res-f))
+	 	  #f local-enemy-position))
+
 	 (define/public (king-in-check? board-pos)
+	   (define local-self-position
+	     (if (eq? (get-turn) 'white)
+		 (car board-pos)
+		 (cdr board-pos)))
 	   (define (get-king-pos)
 	     (foldr (lambda (elem found-pos)
 	   	      (if found-pos found-pos
 	   		  (if (eq? (first elem) "K")
 	   		      (second elem)
 	   		      #f)))
-	   	    #f (get-self-position)))
-           (capturable? board-pos (get-king-pos) (flip (get-turn))))
+	   	    #f local-self-position))
+           (capturable2? board-pos (get-king-pos) (flip (get-turn))))
 
 	 (define/public (give-castling-moves)
 	   (let* ([dummy-piece (new chess-piece%)]
@@ -370,11 +414,11 @@
 	 		   (not (capturable? board-pos (cons 7 rank) (get-turn))))
 	 	      (if (eq? (get-turn) 'white)
 	 		  (list (cons (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
-	 				    (list "R" (cons 8 rank) (cons 6 rank)))
-	 			enemy-position))
+						   (list "R" (cons 8 rank) (cons 6 rank)))
+				      enemy-position))
 	 		  (list (cons enemy-position
-	 			(change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
-	 				    (list "R" (cons 8 rank) (cons 6 rank))))))
+				      (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
+						   (list "R" (cons 8 rank) (cons 6 rank))))))
 	 	      (list))
 	 	  (list))
 	      (if long-castle-enable
@@ -389,22 +433,41 @@
 	 		   (not (capturable? board-pos (cons 3 rank) (get-turn))))
 	 	      (if (eq? (get-turn) 'white)
 	 		  (list (cons (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
-						  (list "R" (cons 1 rank) (cons 4 rank)))
-	 			enemy-position))
+						   (list "R" (cons 1 rank) (cons 4 rank)))
+				      enemy-position))
 	 		  (list (cons enemy-position
-	 			(change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
-	 				    (list "R" (cons 1 rank) (cons 4 rank))))))
+				      (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
+						   (list "R" (cons 1 rank) (cons 4 rank))))))
 	 	      (list))
 	 	  (list)))))
 	 
 	 (define/public (give-all-positions)
-	   (append (give-castling-moves) (filter (lambda (board-pos) (not (send this king-in-check? (get-field board-position board-pos))))
-		   (map (lambda (move) (make-object complete-position% 
-						    (append-properly (send this change-pos move)
-								     (send this capture (third move)))
-						    (flip (get-turn)) move 
-						    (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move)))
-			(get-all-moves)))))
+	   (define last-rank
+	     (if (eq? (get-turn) 'white)
+		 8 1))
+	   (append (give-castling-moves) 
+		   (filter (lambda (board-pos) (not (send this king-in-check? (get-field board-position board-pos))))
+			   (foldr (lambda (move processed-list)
+				    (if (and (eq? (first move) "P") (= (cdr (third move)) last-rank))
+					(append (list 
+						 (make-object complete-position% 
+							      (append-properly (promotion-handler move "Q")
+									       (send this capture (third move)))
+							      (flip (get-turn)) move 
+							      (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move))
+						 (make-object complete-position% 
+							      (append-properly (promotion-handler move "N")
+									       (send this capture (third move)))
+							      (flip (get-turn)) move 
+							      (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move)))
+						processed-list)
+					(cons (make-object complete-position% 
+							   (append-properly (send this change-pos move)
+									    (send this capture (third move)))
+							   (flip (get-turn)) move 
+							   (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move))
+					      processed-list)))
+				  (list) (get-all-moves)))))
 
 	 (define (figure num move)
 	   (cond [(and (eq? num 0) (eq? (get-turn) 'white))
@@ -442,52 +505,18 @@
 	 (define (get-turn)
 	   (get-field turn complete-board-position))
 
+	 (define/public (get-move)
+	   (get-field move complete-board-position))
+
 	 (define (get-board-position)
 	   (get-field board-position complete-board-position))
 
 	 (define/public (get-all-moves)
 	   (foldr (lambda (cur-elem processed-list) (append (process cur-elem) processed-list))
-		  (list) (get-self-position)))))
+		  (list) (get-self-position)))
 
-;; (define chess%
-;;   (class object%
-;; 	 (super-new)
-;; 	 (define chess-board (new board%))
+	 (define/public (print)
+	   (send complete-board-position print))))
 
-;; 	 (define (flip turn)
-;; 	   (if (eq? turn 'white)
-;; 	       'black 'white))
-
-;; 	 (define/public (computer-play turn board-position)
-;; 	   (begin
-;; 	     (let* ([possible-positions (send chess-board give-all-positions)])
-;; 	       (begin
-;; 		 (human-play (flip turn))))))
-
-;; 	 (define/public (human-play turn)
-;; 	   (begin
-;; 	     (let* ([move (read)]
-;; 		    [board-position (send chess-board get-board-position)]
-;;                     [half-position (if (eq? turn 'white)
-;;                                        (car board-position)
-;;                                        (cdr board-position))]
-;; 		    [other-half-position (if (eq? turn 'white)
-;; 					     (cdr board-position)
-;; 					     (car board-position))]
-;;                     [new-half-position (send chess-board change-pos half-position (first move) (second move) (third move))]
-;; 		    [new-other-half-position (send chess-board capture other-half-position (third move))])
-;; 	       (begin
-;; 		 (display new-other-half-position)
-;;                  (if (eq? turn 'white)
-;; 		     (send chess-board change (cons new-half-position new-other-half-position))
-;; 		     (send chess-board change (cons new-other-half-position new-half-position)))
-;; 		 (computer-play (flip turn))))))
-
-;; 	 (computer-play 'white)))
-
-(define B (new board% (complete-board-position random-complete-position-1)))
-(define all-positions (send B give-all-positions))
-;(send B get-all-moves)
-;(map (lambda (x) (send x print)) (send B give-all-positions))
-
-;(define C (new chess%))
+(define board (make-object board% random-complete-position-2))
+(send board give-all-positions)

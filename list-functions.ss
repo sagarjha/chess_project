@@ -1,7 +1,6 @@
 #lang racket
 
-(provide take-while
-	 remove-val)
+(provide (all-defined-out))
 
 (define (take-while pred1 pred2 lst)
   (foldr (lambda (val l)

@@ -4,8 +4,8 @@
 (require "randomPosition.ss")
 (require racket/gui)
 (require racket/draw)
-(provide my-canvas%
-         chess-gui%)
+(provide (all-defined-out))
+
 ;(define (make-2d-vector r c)
 ;  (build-vector r (lambda (x) (make-vector c #f))))
 ;
