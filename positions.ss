@@ -99,13 +99,13 @@
    ))
 
 (define initial-complete-position
-  (make-object complete-position% initial-position 'white (cons 0 0) #t #t #t #t))
+  (make-object complete-position% initial-position "white" (cons 0 0) #t #t #t #t))
 
 (define random-complete-position
-  (make-object complete-position% random-position 'white (cons 0 0) #f #f #f #f))
+  (make-object complete-position% random-position "white" (cons 0 0) #f #f #f #f))
 
 (define random-complete-position-1
-  (make-object complete-position% random-position-1 'black (cons 0 0) #t #t #t #t))
+  (make-object complete-position% random-position-1 "black" (cons 0 0) #t #t #t #t))
 
 (define random-complete-position-2
-  (make-object complete-position% random-position-2 'white (cons 0 0) #t #f #t #t))
+  (make-object complete-position% random-position-2 "white" (cons 0 0) #t #f #t #t))

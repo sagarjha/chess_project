@@ -34,10 +34,10 @@
 	 (define/public (give-all-moves board-position move pos)
 	   (let* ([file (car pos)]
 		  [rank (cdr pos)]
-		  [pair-position (if (eq? move "white")
+		  [pair-position (if (eq? move 'white)
 				     board-position
 				     (cons (cdr board-position) (car board-position)))])
-	     (cond [(eq? move "white")
+	     (cond [(eq? move 'white)
 		    (let* ([one-step-ahead (if (or (= rank 8) 
 						   (not (send this resolvable? (car pair-position) (cons file (+ rank 1))))
 						   (not (send this resolvable? (cdr pair-position) (cons file (+ rank 1)))))
@@ -55,7 +55,7 @@
 						 (cons (+ file 1) (+ rank 1))]
 						[else #f])])
 		      (remove-val #f (list one-step-ahead two-steps-ahead capture-left capture-right)))]
-		   [(eq? move "black")
+		   [(eq? move 'black)
 		    (let* ([one-step-ahead (if (or (= rank 1)
 						   (not (send this resolvable? (car pair-position) (cons file (- rank 1))))
 						   (not (send this resolvable? (cdr pair-position) (cons file (- rank 1)))))
@@ -84,7 +84,7 @@
 	 (define/public (give-all-moves board-position move pos)
 	   (let* ([file (car pos)]
 		  [rank (cdr pos)]
-		  [half-position (if (eq? move "white")
+		  [half-position (if (eq? move 'white)
 				     (car board-position)
 				     (cdr board-position))])
 	     (filter (lambda (new-pos) (send this resolvable? half-position new-pos))
@@ -106,7 +106,7 @@
 	   (let* ([file (car pos)]
 		  [rank (cdr pos)]
 		  [move-range (range 1 8)]
-		  [pair-position (if (eq? move "white")
+		  [pair-position (if (eq? move 'white)
 				     board-position
 				     (cons (cdr board-position) (car board-position)))])
 	     (append 
@@ -138,7 +138,7 @@
 	   (let* ([file (car pos)]
 		  [rank (cdr pos)]
 		  [move-range (range 1 8)]
-		  [pair-position (if (eq? move "white")
+		  [pair-position (if (eq? move 'white)
 				     board-position
 				     (cons (cdr board-position) (car board-position)))])
 	     (append 
@@ -166,7 +166,7 @@
 	   (let* ([file (car pos)]
 		  [rank (cdr pos)]
 		  [move-range (range 1 8)]
-		  [pair-position (if (eq? move "white")
+		  [pair-position (if (eq? move 'white)
 				     board-position
 				     (cons (cdr board-position) (car board-position)))])
 	     (append 
@@ -210,7 +210,7 @@
 	   (let* ([file (car pos)]
 		  [rank (cdr pos)]
 		  [move-range (range -7 8)]
-		  [half-position (if (eq? move "white")
+		  [half-position (if (eq? move 'white)
 				     (car board-position)
 				     (cdr board-position))])
 	     (filter (lambda (new-pos) (send this resolvable? half-position new-pos))
@@ -239,9 +239,9 @@
 	 
 
          (define (flip turn)
-           (if (eq? turn "white")
-               "black"
-               "white"))
+           (if (eq? turn 'white)
+               'black
+               'white))
 	 
 	 (define (get-dummy symbol)
 	   (cond [(eq? symbol "P") dummy-pawn]
@@ -305,7 +305,7 @@
 	   (define piece (first move))
 	   (define prev-pos (second move))
 	   (define new-pos (third move))
-	   (define last-rank (if (eq? (get-turn) "white") 8 1))
+	   (define last-rank (if (eq? (get-turn) 'white) 8 1))
 	   (change-pos-h (get-self-position)))
 
 	 (define/public (change-pos2 board-pos move)
@@ -324,7 +324,7 @@
 	   (define piece (first move))
 	   (define prev-pos (second move))
 	   (define new-pos (third move))
-	   (if (eq? (get-turn) "white") (change-pos-h (car board-pos))
+	   (if (eq? (get-turn) 'white) (change-pos-h (car board-pos))
 	       (change-pos-h (cdr board-pos))))
 
 	 (define/public (capture pos)
@@ -365,7 +365,7 @@
 
 	 (define/public (capturable2? board-pos square var-turn)
 	   (define local-enemy-position
-	     (if (eq? var-turn "white")
+	     (if (eq? var-turn 'white)
 		 (car board-pos)
 		 (cdr board-pos)))
 	   (foldr (lambda (elem res-f)
@@ -377,7 +377,7 @@
 
 	 (define/public (king-in-check? board-pos)
 	   (define local-self-position
-	     (if (eq? (get-turn) "white")
+	     (if (eq? (get-turn) 'white)
 		 (car board-pos)
 		 (cdr board-pos)))
 	   (define (get-king-pos)
@@ -389,89 +389,14 @@
 	   	    #f local-self-position))
            (capturable2? board-pos (get-king-pos) (flip (get-turn))))
 
-	 (define (king-side-castling-position)
-	   (let* ([dummy-piece (new chess-piece%)]
-	 	  [rank (if (eq? (get-turn) "white")
-	 		    1 8)]
-	 	  [short-castle-enable (if (eq? (get-turn) "white")
-	 				   (get-scew)
-	 				   (get-sceb))]
-	 	  [board-pos (get-board-position)]
-	 	  [self-position (get-self-position)]
-	 	  [enemy-position (get-enemy-position)])
-
-	     (if short-castle-enable
-		 (if (and (send dummy-piece resolvable? self-position (cons 6 rank))
-			  (send dummy-piece resolvable? self-position (cons 7 rank))
-			  (send dummy-piece resolvable? enemy-position (cons 6 rank))
-			  (send dummy-piece resolvable? enemy-position (cons 7 rank))
-			  (not (capturable? board-pos (cons 5 rank) (get-turn)))
-			  (not (capturable? board-pos (cons 6 rank) (get-turn)))
-			  (not (capturable? board-pos (cons 7 rank) (get-turn))))
-		     (if (eq? (get-turn) "white")
-			 (list (make-object complete-position%
-					    (cons (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
-							       (list "R" (cons 8 rank) (cons 6 rank)))
-						  enemy-position)
-					    (flip (get-turn)) "O-O"
-					    #f (get-sceb) #f (get-lceb)))
-			 (list (make-object complete-position%
-					    (cons enemy-position
-						  (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
-							       (list "R" (cons 8 rank) (cons 6 rank))))
-					    (flip (get-turn)) "O-O"
-					    (get-scew) #f (get-lcew) #f)))
-		     (list))
-		 (list))))
-
-	 (define (queen-side-castling-position)
-	   (let* ([dummy-piece (new chess-piece%)]
-	 	  [rank (if (eq? (get-turn) "white")
-	 		    1 8)]
-	 	  [short-castle-enable (if (eq? (get-turn) "white")
-	 				   (get-scew)
-	 				   (get-sceb))]
-	 	  [long-castle-enable (if (eq? (get-turn) "white")
-	 				  (get-lcew)
-	 				  (get-lceb))]
-                  [board-pos (get-board-position)]
-	 	  [self-position (get-self-position)]
-	 	  [enemy-position (get-enemy-position)])
-	     (if long-castle-enable
-		 (if (and (send dummy-piece resolvable? self-position (cons 4 rank))
-			  (send dummy-piece resolvable? self-position (cons 3 rank))
-			  (send dummy-piece resolvable? self-position (cons 2 rank))
-			  (send dummy-piece resolvable? enemy-position (cons 4 rank))
-			  (send dummy-piece resolvable? enemy-position (cons 3 rank))
-			  (send dummy-piece resolvable? enemy-position (cons 2 rank))
-			  (not (capturable? board-pos (cons 5 rank) (get-turn)))
-			  (not (capturable? board-pos (cons 4 rank) (get-turn)))
-			  (not (capturable? board-pos (cons 3 rank) (get-turn))))
-		     (if (eq? (get-turn) "white")
-			 (list (make-object complete-position%
-					    (cons (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
-							       (list "R" (cons 1 rank) (cons 4 rank)))
-						  enemy-position)
-					    (flip (get-turn)) "O-O-O" 
-					    #f (get-sceb) #f (get-lceb)))
-			 (list (make-object complete-position%
-					    (cons enemy-position
-						  (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
-							       (list "R" (cons 1 rank) (cons 4 rank))))
-					    (flip (get-turn)) "O-O-O"
-					    (get-scew) #f (get-lcew) #f)))
-		     (list))
-		 (list))))
-
-
 	 (define/public (give-castling-moves)
 	   (let* ([dummy-piece (new chess-piece%)]
-	 	  [rank (if (eq? (get-turn) "white")
+	 	  [rank (if (eq? (get-turn) 'white)
 	 		    1 8)]
-	 	  [short-castle-enable (if (eq? (get-turn) "white")
+	 	  [short-castle-enable (if (eq? (get-turn) 'white)
 	 				   (get-scew)
 	 				   (get-sceb))]
-	 	  [long-castle-enable (if (eq? (get-turn) "white")
+	 	  [long-castle-enable (if (eq? (get-turn) 'white)
 	 				  (get-lcew)
 	 				  (get-lceb))]
                   [board-pos (get-board-position)]
@@ -488,12 +413,12 @@
 			     (not (capturable? board-pos (cons 5 rank) (get-turn)))
 			     (not (capturable? board-pos (cons 6 rank) (get-turn)))
 			     (not (capturable? board-pos (cons 7 rank) (get-turn))))
-			(if (eq? (get-turn) "white")
+			(if (eq? (get-turn) 'white)
 			    (cons (cons (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
 						     (list "R" (cons 8 rank) (cons 6 rank)))
 					enemy-position) (list #t))
 			    (cons (cons enemy-position
-					(change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
+				  (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
 						     (list "R" (cons 8 rank) (cons 6 rank)))) (list #t)))
 			(list))
 		    (list))
@@ -507,60 +432,107 @@
 			     (not (capturable? board-pos (cons 5 rank) (get-turn)))
 			     (not (capturable? board-pos (cons 4 rank) (get-turn)))
 			     (not (capturable? board-pos (cons 3 rank) (get-turn))))
-			(if (eq? (get-turn) "white")
+			(if (eq? (get-turn) 'white)
 			    (list (cons (cons (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
-							   (list "R" (cons 1 rank) (cons 4 rank)))
-					      enemy-position) #f))
+						     (list "R" (cons 1 rank) (cons 4 rank)))
+					enemy-position) #f))
 			    (list (cons (cons enemy-position
-					      (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
-							   (list "R" (cons 1 rank) (cons 4 rank)))) #f)))
+					(change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
+						     (list "R" (cons 1 rank) (cons 4 rank)))) #f)))
 			(list))
 		    (list))))))
-	 
+	   
 	 (define/public (give-all-positions)
 	   (define last-rank
-	     (if (eq? (get-turn) "white")
+	     (if (eq? (get-turn) 'white)
 		 8 1))
-	   (append (king-side-castling-position) (queen-side-castling-position)
-		   (filter (lambda (board-pos) (not (send this king-in-check? (get-field board-position board-pos))))
-			   (foldr (lambda (move processed-list)
-				    (if (and (eq? (first move) "P") (= (cdr (third move)) last-rank))
-					(append (list 
-						 (make-object complete-position% 
-							      (append-properly (promotion-handler move "Q")
-									       (send this capture (third move)))
-							      (flip (get-turn)) move 
-							      (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move))
-						 (make-object complete-position% 
-							      (append-properly (promotion-handler move "N")
-									       (send this capture (third move)))
-							      (flip (get-turn)) move 
-							      (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move)))
-						processed-list)
-					(cons (make-object complete-position% 
-							   (append-properly (send this change-pos move)
-									    (send this capture (third move)))
-							   (flip (get-turn)) move 
-							   (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move))
-					      processed-list)))
-				  (list) (get-all-moves)))))
-	 ;; (if (not (null? refined-castling-positions))
-	 ;; 	   (begin
-	 ;; 	     (display all-positions)
-	 ;; 	     (read))
-	 ;; 	   null)
+	   (let* ([castling-moves (give-castling-moves)]
+		  [refined-castling-positions  (if (null? (car (give-castling-moves)))
+					       (list)
+					       (begin
+						 (if (eq? (length castling-moves) 1)
+						     (list (make-object complete-position%
+									(car (car castling-moves))
+									(flip (get-turn)) 
+									(begin
+									  (if (eq? (cadar castling-moves) #t)
+									    "O-O" "O-O-O"))
+									(if (eq? (get-turn) 'white)
+									    #f (get-scew))
+									(if (eq? (get-turn) 'white)
+									    (get-sceb) #f)
+									(if (eq? (get-turn) 'white)
+									    #f (get-lcew))
+									(if (eq? (get-turn) 'white)
+									    (get-sceb) #f)))
+						     (begin
+								(list (make-object complete-position%
+									(car (car castling-moves))
+									(flip (get-turn)) 
+									"O-O"
+									(if (eq? (get-turn) 'white)
+									    #f (get-scew))
+									(if (eq? (get-turn) 'white)
+									    (get-sceb) #f)
+									(if (eq? (get-turn) 'white)
+									    #f (get-lcew))
+									(if (eq? (get-turn) 'white)
+									    (get-sceb) #f))
+							   (make-object complete-position%
+									(car (cadr castling-moves))
+									(flip (get-turn)) 
+									"O-O-O"
+									(if (eq? (get-turn) 'white)
+									    #f (get-scew))
+									(if (eq? (get-turn) 'white)
+									    (get-sceb) #f)
+									(if (eq? (get-turn) 'white)
+									    #f (get-lcew))
+									(if (eq? (get-turn) 'white)
+									    (get-sceb) #f)))))))]
+		  
+		  [all-positions (append refined-castling-positions
+					 (filter (lambda (board-pos) (not (send this king-in-check? (get-field board-position board-pos))))
+						 (foldr (lambda (move processed-list)
+							  (if (and (eq? (first move) "P") (= (cdr (third move)) last-rank))
+							      (append (list 
+								       (make-object complete-position% 
+										    (append-properly (promotion-handler move "Q")
+												     (send this capture (third move)))
+										    (flip (get-turn)) move 
+										    (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move))
+								       (make-object complete-position% 
+										    (append-properly (promotion-handler move "N")
+												     (send this capture (third move)))
+										    (flip (get-turn)) move 
+										    (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move)))
+								      processed-list)
+							      (cons (make-object complete-position% 
+										 (append-properly (send this change-pos move)
+												  (send this capture (third move)))
+										 (flip (get-turn)) move 
+										 (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move))
+								    processed-list)))
+							(list) (get-all-moves))))])
+	   (begin
+	       ;; (if (not (null? refined-castling-positions))
+	       ;; 	   (begin
+	       ;; 	     (display all-positions)
+	       ;; 	     (read))
+	       ;; 	   null)
+	     all-positions)))
 
 	 (define (figure num move)
-	   (cond [(and (eq? num 0) (eq? (get-turn) "white"))
+	   (cond [(and (eq? num 0) (eq? (get-turn) 'white))
 		  (and (get-scew) (not (or (eq? (first move) "K")
 					   (and (eq? (first move) "R") (equal? (second move) (cons 8 1))))))]
-		 [(and (eq? num 1) (eq? (get-turn) "black"))
+		 [(and (eq? num 1) (eq? (get-turn) 'black))
 		  (and (get-sceb) (not (or (eq? (first move) "K")
 					   (and (eq? (first move) "R") (equal? (second move) (cons 8 8))))))]
-		 [(and (eq? num 2) (eq? (get-turn) "white"))
+		 [(and (eq? num 2) (eq? (get-turn) 'white))
 		  (and (get-lcew) (not (or (eq? (first move) "K")
 					   (and (eq? (first move) "R") (equal? (second move) (cons 1 1))))))]
-		 [(and (eq? num 3) (eq? (get-turn) "black"))
+		 [(and (eq? num 3) (eq? (get-turn) 'black))
 		  (and (get-lceb) (not (or (eq? (first move) "K")
 					   (and (eq? (first move) "R") (equal? (second move) (cons 1 8))))))]
 		 [else (cond [(eq? num 0) (get-scew)]
@@ -569,27 +541,27 @@
 			     [(eq? num 3) (get-lceb)])]))
 
 	 (define/public (append-properly self-position enemy-position)
-	   (if (eq? (get-turn) "white")
+	   (if (eq? (get-turn) 'white)
 	       (cons self-position enemy-position)
 	       (cons enemy-position self-position)))
 
 	 (define (get-self-position)
-	   (if (eq? (get-turn) "white")
+	   (if (eq? (get-turn) 'white)
 	       (car (get-board-position))
 	       (cdr (get-board-position))))
 
 	 (define (get-enemy-position)
-	   (if (eq? (get-turn) "white")
+	   (if (eq? (get-turn) 'white)
 	       (cdr (get-board-position))
 	       (car (get-board-position))))
 
-	 (define/public (get-turn)
+	 (define (get-turn)
 	   (get-field turn complete-board-position))
 
 	 (define/public (get-move)
 	   (get-field move complete-board-position))
 
-	 (define/public (get-board-position)
+	 (define (get-board-position)
 	   (get-field board-position complete-board-position))
 
 	 (define/public (get-all-moves)
@@ -598,3 +570,6 @@
 
 	 (define/public (print)
 	   (send complete-board-position print))))
+
+(define B (new board% (complete-board-position random-complete-position-3)))
+(send B give-all-positions)
