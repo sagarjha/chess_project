@@ -1,6 +1,6 @@
 #lang racket
 
-(provide initial-position)
+(provide (all-defined-out))
 
 (define initial-position
   (cons

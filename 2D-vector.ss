@@ -1,8 +1,6 @@
 #lang racket
 
-(provide make-2d-vector
-	 2d-vector-ref
-	 2d-vector-set!)
+(provide (all-defined-out))
 
 (define (make-2d-vector r c)
   (build-vector r (lambda (x) (make-vector c #f))))

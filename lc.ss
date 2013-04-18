@@ -1,5 +1,5 @@
 #lang racket
-(provide lc)
+(provide (all-defined-out))
 
 (define (concat l) (foldr append `() l))
 
