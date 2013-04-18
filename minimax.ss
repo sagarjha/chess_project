@@ -7,26 +7,7 @@
 (struct node (comp-posn alpha beta) #:transparent #:mutable)
 
 
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;MAJOR CHANGES TO BE DONE- 
-;1) CHANGE THE MOVE- IT CURRENTLY IS EXCLUSIVELY WHITE
-;2) CHANGE THE CALL TO EVALUATE SO THAT IT TAKES A "complete-position" OBJECT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
 (define inf 10000)
-;(define tree (node 1 
-;                   (list 
-;                    (node 2 (list (node 200  (- 0 inf) inf) (node 6  (- 0 inf) inf)) (- 0 inf) inf) 
-;                    (node 3 (list (node 66  (- 0 inf) inf) (node 7  (- 0 inf) inf)) (- 0 inf) inf)
-;                    (node 4 (list (node 66  (- 0 inf) inf) (node 9  (- 0 inf) inf)) (- 0 inf) inf)
-;                    (node 5 (list (node 66  (- 0 inf) inf) (node 8  (- 0 inf) inf)) (- 0 inf) inf)
-;                    (node 6 (list (node 66  (- 0 inf) inf) (node 10  (- 0 inf) inf)) (- 0 inf) inf))
-;                   (- 0 inf) 
-;                   inf))
 
 ;One workaround to generate the tree on-the-fly is to define a board inside (say, "minboard") inside the alpha-beta functions,
 ;sending to which give-all-positions will return a list of positions for me.
@@ -49,7 +30,7 @@
         (one-child-check list-of-child-posns))))
 
 (define (alpha-beta-min curnode depthleft)
-  (define minboard (new board% (complete-board-position (node-comp-posn curnode))));CHANGE THE WHITE
+  (define minboard (new board% (complete-board-position (node-comp-posn curnode))))
   (define (one-child-check remaining-children)
     (if (null? remaining-children) (node-beta curnode)
     (let* ([childposn (car remaining-children)]
@@ -68,7 +49,7 @@
 
 ;This one is a modified alpha-beta-max function which returns the position instead of the value
 (define (first-alpha-beta-max curnode depthleft)
-  (define minboard (new board% (complete-board-position (node-comp-posn curnode))));CHANGE THE WHITE
+  (define minboard (new board% (complete-board-position (node-comp-posn curnode))))
   (define randomizer (random));Random number to facilitate selection of second-best move with some probability
   (define abfailparameter 0.97);This is to choose probabilistically (in case of alpha > beta) which move to take- the current one or one from the already found ones
   (define moves-found (make-vector 5 #f))
@@ -107,8 +88,8 @@
             
             [(> score (node-alpha curnode)) (begin 
                                            (set-node-alpha! curnode score)
-                                           (move-shift (get-field move (node-comp-posn child)))
-                                           (display (node-comp-posn child)) (newline)
+                                           (move-shift (node-comp-posn child))
+                                           ;(display (node-comp-posn child)) (newline)
                                            ;(display moves-found) (newline) ;Trace output
                                            (one-child-check (cdr remaining-children)))]
             [else (one-child-check (cdr remaining-children))]))))
@@ -143,4 +124,4 @@
 
 (define (get-best-move board-comp-pos) (first-alpha-beta-max (node board-comp-pos (- 0 inf) inf) 1));Last argument is tree depth. To change
 
-(define returned-move (get-best-move comp-posn-trial))
+(define returned-move (get-best-move initial-complete-position))
