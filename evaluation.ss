@@ -22,7 +22,10 @@
                           (list "Q" (cons 4 8))
                           (list "K" (cons 5 8)))))
 
-(define (evaluate-posn comp-posn) 2)
+(define (evaluate-posn comp-posn)
+  (let* ([board-pos (get-field board-position comp-posn)]
+         [whose-turn? (get-field turn comp-posn)])
+    2))
 
 (struct piece (rank file type color) #:transparent)
 (define fboard (make-2d-vector 8 8))
