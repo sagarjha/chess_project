@@ -217,7 +217,7 @@
 		     (append (lc (cons x y) : x <- (list (- file 1) file (+ file 1))
 				 y <- (list (- rank 1) rank (+ rank 1))
 				 * (> x 0) * (< x 9) * (> y 0) * (< y 9)
-				 * (or (not (= x file)) (not (= y file))))))))))
+				 * (or (not (= x file)) (not (= y rank))))))))))
 
 (define board%
   (class object%
@@ -414,12 +414,12 @@
 			     (not (capturable? board-pos (cons 6 rank) (get-turn)))
 			     (not (capturable? board-pos (cons 7 rank) (get-turn))))
 			(if (eq? (get-turn) 'white)
-			    (cons (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
+			    (cons (cons (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
 						     (list "R" (cons 8 rank) (cons 6 rank)))
-					enemy-position)
-			    (cons enemy-position
+					enemy-position) (list #t))
+			    (cons (cons enemy-position
 				  (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
-						     (list "R" (cons 8 rank) (cons 6 rank)))))
+						     (list "R" (cons 8 rank) (cons 6 rank)))) (list #t)))
 			(list))
 		    (list))
 		(if long-castle-enable
@@ -433,12 +433,12 @@
 			     (not (capturable? board-pos (cons 4 rank) (get-turn)))
 			     (not (capturable? board-pos (cons 3 rank) (get-turn))))
 			(if (eq? (get-turn) 'white)
-			    (list (cons (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
+			    (list (cons (cons (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
 						     (list "R" (cons 1 rank) (cons 4 rank)))
-					enemy-position))
-			    (list (cons enemy-position
+					enemy-position) #f))
+			    (list (cons (cons enemy-position
 					(change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
-						     (list "R" (cons 1 rank) (cons 4 rank))))))
+						     (list "R" (cons 1 rank) (cons 4 rank)))) #f)))
 			(list))
 		    (list))))))
 	   
@@ -447,46 +447,94 @@
 	     (if (eq? (get-turn) 'white)
 		 8 1))
 	   (let* ([castling-moves (give-castling-moves)]
-		  [refined-castling-moves  (if (null? (car (give-castling-moves)))
+		  [refined-castling-positions  (if (null? (car (give-castling-moves)))
 					       (list)
-					       castling-moves)])
-	     (append refined-castling-moves
-		     (filter (lambda (board-pos) (not (send this king-in-check? (get-field board-position board-pos))))
-			   (foldr (lambda (move processed-list)
-				    (if (and (eq? (first move) "P") (= (cdr (third move)) last-rank))
-					(append (list 
-						 (make-object complete-position% 
-							      (append-properly (promotion-handler move "Q")
-									       (send this capture (third move)))
-							      (flip (get-turn)) move 
-							      (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move))
-						 (make-object complete-position% 
-							      (append-properly (promotion-handler move "N")
-									       (send this capture (third move)))
-							      (flip (get-turn)) move 
-							      (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move)))
-						processed-list)
-					(cons (make-object complete-position% 
-							   (append-properly (send this change-pos move)
-									    (send this capture (third move)))
-							   (flip (get-turn)) move 
-							   (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move))
-					      processed-list)))
-				  (list) (get-all-moves))))))
+					       (begin
+						 (if (eq? (length castling-moves) 1)
+						     (list (make-object complete-position%
+									(car (car castling-moves))
+									(flip (get-turn)) 
+									(begin
+									  (if (eq? (cadar castling-moves) #t)
+									    "O-O" "O-O-O"))
+									(if (eq? (get-turn) 'white)
+									    #f (get-scew))
+									(if (eq? (get-turn) 'white)
+									    (get-sceb) #f)
+									(if (eq? (get-turn) 'white)
+									    #f (get-lcew))
+									(if (eq? (get-turn) 'white)
+									    (get-sceb) #f)))
+						     (begin
+								(list (make-object complete-position%
+									(car (car castling-moves))
+									(flip (get-turn)) 
+									"O-O"
+									(if (eq? (get-turn) 'white)
+									    #f (get-scew))
+									(if (eq? (get-turn) 'white)
+									    (get-sceb) #f)
+									(if (eq? (get-turn) 'white)
+									    #f (get-lcew))
+									(if (eq? (get-turn) 'white)
+									    (get-sceb) #f))
+							   (make-object complete-position%
+									(car (cadr castling-moves))
+									(flip (get-turn)) 
+									"O-O-O"
+									(if (eq? (get-turn) 'white)
+									    #f (get-scew))
+									(if (eq? (get-turn) 'white)
+									    (get-sceb) #f)
+									(if (eq? (get-turn) 'white)
+									    #f (get-lcew))
+									(if (eq? (get-turn) 'white)
+									    (get-sceb) #f)))))))]
+		  
+		  [all-positions (append refined-castling-positions
+					 (filter (lambda (board-pos) (not (send this king-in-check? (get-field board-position board-pos))))
+						 (foldr (lambda (move processed-list)
+							  (if (and (eq? (first move) "P") (= (cdr (third move)) last-rank))
+							      (append (list 
+								       (make-object complete-position% 
+										    (append-properly (promotion-handler move "Q")
+												     (send this capture (third move)))
+										    (flip (get-turn)) move 
+										    (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move))
+								       (make-object complete-position% 
+										    (append-properly (promotion-handler move "N")
+												     (send this capture (third move)))
+										    (flip (get-turn)) move 
+										    (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move)))
+								      processed-list)
+							      (cons (make-object complete-position% 
+										 (append-properly (send this change-pos move)
+												  (send this capture (third move)))
+										 (flip (get-turn)) move 
+										 (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move))
+								    processed-list)))
+							(list) (get-all-moves))))])
+	   (begin
+	       ;; (if (not (null? refined-castling-positions))
+	       ;; 	   (begin
+	       ;; 	     (display all-positions)
+	       ;; 	     (read))
+	       ;; 	   null)
+	     all-positions)))
 
 	 (define (figure num move)
 	   (cond [(and (eq? num 0) (eq? (get-turn) 'white))
 		  (and (get-scew) (not (or (eq? (first move) "K")
-					   (and (eq? (first move) "R") (eq? (second move) (cons 8 1))))))]
+					   (and (eq? (first move) "R") (equal? (second move) (cons 8 1))))))]
 		 [(and (eq? num 1) (eq? (get-turn) 'black))
 		  (and (get-sceb) (not (or (eq? (first move) "K")
-					   (and (eq? (first move) "R") (eq? (second move) (cons 8 8))))))]
+					   (and (eq? (first move) "R") (equal? (second move) (cons 8 8))))))]
 		 [(and (eq? num 2) (eq? (get-turn) 'white))
 		  (and (get-lcew) (not (or (eq? (first move) "K")
-					   (and (eq? (first move) "R") (eq? (second move) (cons 1 1))))))]
+					   (and (eq? (first move) "R") (equal? (second move) (cons 1 1))))))]
 		 [(and (eq? num 3) (eq? (get-turn) 'black))
 		  (and (get-lceb) (not (or (eq? (first move) "K")
-					   (and (eq? (first move) "R") (eq? (second move) (cons 1 8))))))]
+					   (and (eq? (first move) "R") (equal? (second move) (cons 1 8))))))]
 		 [else (cond [(eq? num 0) (get-scew)]
 			     [(eq? num 1) (get-sceb)]
 			     [(eq? num 2) (get-lcew)]
@@ -523,3 +571,5 @@
 	 (define/public (print)
 	   (send complete-board-position print))))
 
+;(define chess-board (new board% (complete-board-position random-complete-position-3)))
+;(send chess-board give-all-positions)
