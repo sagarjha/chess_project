@@ -5,6 +5,7 @@
 (require "2D-vector.ss")
 (require "list-functions.ss")
 (require "randomPosition.ss")
+(provide board%)
 
 (define chess-piece%
   (class object%
@@ -27,7 +28,7 @@
 (define pawn%
   (class chess-piece%
 	 (super-new)
-	 (define/public (valid? board-position move pos new-pos)
+	  (define/public (valid? board-position move pos new-pos)
 	   (if (member new-pos (give-all-moves board-position move pos))
 	       #t #f))
 	 (define/public (give-all-moves board-position move pos)
@@ -130,7 +131,7 @@
   (class chess-piece%
 	 (super-new)
 	 (define/public (valid? board-position move pos new-pos)
-	   (if (member new-pos (give-all-moves board-position move pos))
+	    (if (member new-pos (give-all-moves board-position move pos))
 	       #t #f))
 
 	 (define/public (give-all-moves board-position move pos)
@@ -158,7 +159,7 @@
   (class chess-piece%
 	 (super-new)
 	 (define/public (valid? board-position move pos new-pos)
-	   (if (member new-pos (give-all-moves board-position move pos))
+	    (if (member new-pos (give-all-moves board-position move pos))
 	       #t #f))
 
 	 (define/public (give-all-moves board-position move pos)
@@ -202,8 +203,8 @@
   (class chess-piece%
 	 (super-new)
 	 (define/public (valid? board-position move pos new-pos)
-	   (if (member new-pos (give-all-moves board-position move pos))
-	       #t #f))
+           (if (member new-pos (give-all-moves board-position move pos))
+               #t #f))
 
 	 (define/public (give-all-moves board-position move pos)
 	   (let* ([file (car pos)]
@@ -221,6 +222,8 @@
 (define board%
   (class object%
 	 (super-new)
+    ;(display "node")
+    (newline)
 	 (init-field (board-position initial-position))
 	 (init-field (move 'white))
 	 (define chess-board (make-2d-vector 8 8))
@@ -268,7 +271,7 @@
 	     (setup-black (cdr board-position))
 	     (print)))
 
-	 (setup)
+	 ;(setup)
 
 	 (define (get-dummy symbol)
 	   (cond [(eq? symbol "P") dummy-pawn]
@@ -312,7 +315,7 @@
 	 (define/public (capturable? enemy-position square)
 	   (foldr (lambda (elem res-f)
                       (or (foldr (lambda (pos res)
-				   (or (send (get-dummy (car elem)) valid? board-position (flip move) pos square) res))
+				    (or (send (get-dummy (car elem)) valid? board-position (flip move) pos square) res))
 				 #f (cdr elem)) res-f))
 		    #f enemy-position))
 
@@ -333,7 +336,7 @@
 		  [king-pos (get-king-pos half-position)])
 	     (foldr (lambda (elem res-f)
                       (or (foldr (lambda (pos res)
-				   (or (send (get-dummy (car elem)) valid? board-position (flip move) pos king-pos) res))
+				    (or (send (get-dummy (car elem)) valid? board-position (flip move) pos king-pos) res))
 				 #f (cdr elem)) res-f))
 		    #f other-half-position)))
 
@@ -399,7 +402,7 @@
 					   (cdr board-position)
 					   (car board-position))]
 		  [castling-moves (give-castling-moves)])
-	     (cons castling-moves 
+	     (append castling-moves 
 		   (filter (lambda (board-position)
 			     (not (king-in-check? board-position)))
 			   (foldr (lambda (val lst) (append (process val half-position other-half-position) lst))

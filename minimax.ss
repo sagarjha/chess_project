@@ -2,7 +2,7 @@
 (require "chess.ss")
 (require "evaluation.ss")
 
-(struct node (posn alpha beta) #:transparent #:mutable)
+(struct node (comp-posn alpha beta) #:transparent #:mutable)
 
 
 
@@ -30,7 +30,7 @@
 ;sending to which give-all-positions will return a list of positions for me.
 ;With this we need to replace all "(node-children curnode)" calls with a "send give-all-positions to minboard".
 (define (alpha-beta-max curnode depthleft)
-  (define minboard (new board% (board-position (node-posn curnode)) (move 'white)));CHANGE THE WHITE
+  (define minboard (new board% (board-position (node-comp-posn curnode)) (move 'white)));CHANGE THE WHITE
   (define (one-child-check remaining-children)
     (if (null? remaining-children) (node-alpha curnode)
     (let* ([childposn (car remaining-children)]
@@ -43,11 +43,11 @@
             [else (one-child-check (cdr remaining-children))]))))
   (let* ([list-of-child-posns (send minboard give-all-positions)]) 
     (if (or (= depthleft 0) (null? list-of-child-posns)) 
-        (evaluate-posn (node-posn curnode)) 
+        (evaluate-posn (node-comp-posn curnode)) 
         (one-child-check list-of-child-posns))))
 
 (define (alpha-beta-min curnode depthleft)
-  (define minboard (new board% (board-position (node-posn curnode)) (move 'white)));CHANGE THE WHITE
+  (define minboard (new board% (board-position (node-comp-posn curnode)) (move 'white)));CHANGE THE WHITE
   (define (one-child-check remaining-children)
     (if (null? remaining-children) (node-beta curnode)
     (let* ([childposn (car remaining-children)]
@@ -60,13 +60,13 @@
             [else (one-child-check (cdr remaining-children))]))))
 (let* ([list-of-child-posns (send minboard give-all-positions)]) 
     (if (or (= depthleft 0) (null? list-of-child-posns)) 
-        (evaluate-posn (node-posn curnode)) 
+        (evaluate-posn (node-comp-posn curnode)) 
         (one-child-check list-of-child-posns))))
 
 
 ;This one is a modified alpha-beta-max function which returns the position instead of the value
 (define (first-alpha-beta-max curnode depthleft)
-  (define minboard (new board% (board-position (node-posn curnode)) (move 'white)));CHANGE THE WHITE
+  (define minboard (new board% (board-position (node-comp-posn curnode)) (move 'white)));CHANGE THE WHITE
   (define randomizer (random));Random number to facilitate selection of second-best move with some probability
   (define abfailparameter 0.97);This is to choose probabilistically (in case of alpha > beta) which move to take- the current one or one from the already found ones
   (define moves-found (make-vector 5 #f))
@@ -100,18 +100,18 @@
                                                 (if (equal? chosen-move #f) (vector-ref moves-found 0) chosen-move))
                                                 ;If choose-move-alpha returns a move with an index that isn't even initialized, 
                                                 ;screw everything and choose the best stored move
-                                                (node-posn child))]
+                                                (node-comp-posn child))]
             ;The above call is made if alpha exceeds beta. Choose the current move with probability abfailparameter or one of the stored moves (calling choose-move again)
             
             [(> score (node-alpha curnode)) (begin 
                                            (set-node-alpha! curnode score)
-                                           (move-shift (node-posn child))
+                                           (move-shift (node-comp-posn child))
                                            ;(display moves-found) (newline) ;Trace output
                                            (one-child-check (cdr remaining-children)))]
             [else (one-child-check (cdr remaining-children))]))))
   (let* ([list-of-child-posns (send minboard give-all-positions)]) 
     (if (or (= depthleft 0) (null? list-of-child-posns)) 
-        (evaluate-posn (node-posn curnode)) 
+        (evaluate-posn (node-comp-posn curnode)) 
         (one-child-check list-of-child-posns))))
 
 ;(define B (new board% (board-position random-position) (move 'white)))
