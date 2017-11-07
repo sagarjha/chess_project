@@ -16,3 +16,10 @@
 	       (cons elem l)))
 	 (list) lst))
 
+(define (car-if-not-null lst)
+  (if (null? lst) lst
+      (car lst)))
+
+(define (cdr-if-not-null lst)
+  (if (null? lst) lst
+      (cdr lst)))

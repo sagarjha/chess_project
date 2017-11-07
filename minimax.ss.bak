@@ -107,9 +107,8 @@
             
             [(> score (node-alpha curnode)) (begin 
                                            (set-node-alpha! curnode score)
-					   (display "here")
-					   (newline)
-                                           (move-shift (get-field move (node-comp-posn child)))
+                                           (move-shift (node-comp-posn child))
+                                           (display (node-comp-posn child)) (newline)
                                            ;(display moves-found) (newline) ;Trace output
                                            (one-child-check (cdr remaining-children)))]
             [else (one-child-check (cdr remaining-children))]))))

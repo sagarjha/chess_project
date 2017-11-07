@@ -238,7 +238,7 @@
 
 	 
 
-         (define (flip turn)
+         (define/public (flip turn)
            (if (eq? turn "white")
                "black"
                "white"))
@@ -306,10 +306,10 @@
 	   (define prev-pos (second move))
 	   (define new-pos (third move))
 	   (define last-rank (if (eq? (get-turn) "white") 8 1))
-	   (change-pos-h (get-self-position)))
+	   (append-properly (change-pos-h (get-self-position))
+                            (capture new-pos)))
 
 	 (define/public (change-pos2 board-pos move)
-	   
 	   (define (change-piece-pos pos-list)
 	     (foldr (lambda (elem lst) (if (equal? elem prev-pos)
 					   (cons new-pos lst)
@@ -317,12 +317,12 @@
 		    (list) pos-list))
 	   
 	   (define (change-pos-h self-pos)
-	     (if (eq? (caar self-pos) piece)
-		 (cons (cons piece (change-piece-pos (cdar self-pos))) (cdr self-pos))
-		 (cons (car self-pos) (change-pos-h (cdr self-pos)))))
-	   
+             (if (eq? (caar self-pos) piece)
+                 (cons (cons piece (change-piece-pos (cdar self-pos))) (cdr self-pos))
+                 (cons (car self-pos) (change-pos-h (cdr self-pos)))))
+           
 	   (define piece (first move))
-	   (define prev-pos (second move))
+           (define prev-pos (second move))
 	   (define new-pos (third move))
 	   (if (eq? (get-turn) "white") (change-pos-h (car board-pos))
 	       (change-pos-h (cdr board-pos))))
@@ -375,11 +375,64 @@
 	 		       #f (cdr elem)) res-f))
 	 	  #f local-enemy-position))
 
+	 (define/public (drawn?)
+	   (let* ([pair-num-pieces (get-number-of-pieces)]
+		  [num-self-pieces (car pair-num-pieces)]
+		  [num-enemy-pieces (cdr pair-num-pieces)]
+		  [num-total-pieces (+ num-self-pieces num-enemy-pieces)]
+		  [num-self-knights (get-number-of-one-piece "N" #t)]
+		  [num-enemy-knights (get-number-of-one-piece "N" #f)]
+		  [num-self-light-bishops (get-number-of-bishops  #t #t)]
+		  [num-self-dark-bishops (get-number-of-bishops #t #f)]
+		  [num-enemy-light-bishops (get-number-of-bishops  #f #t)]
+		  [num-enemy-dark-bishops (get-number-of-bishops  #f #f)])
+	     (cond [(eq? num-total-pieces 2) #t]
+		   [(and (eq? num-total-pieces 3) (eq? (+ num-self-knights num-enemy-knights) 1))
+		    #t]
+		   [(or (eq? (+ num-self-light-bishops num-enemy-light-bishops) (- num-total-pieces 2))
+			(eq? (+ num-self-dark-bishops num-enemy-dark-bishops) (- num-total-pieces 2)))
+		    #t]
+		   [else #f])))
+
+	 (define (get-number-of-bishops side color)
+	   (cond [(and (eq? side #t) (eq? color #t))
+		    (length (lc y : y <- (car-if-not-null (lc (cdr one-piece-list) : one-piece-list <- (get-self-position)
+					   * (eq? (car one-piece-list) "B")))
+			      * (even? (+ (car y) (cdr y)))))]
+		 [(and (eq? side #t) (eq? color #f))
+		  (length (lc y : y <- (car-if-not-null (lc (cdr one-piece-list) : one-piece-list <- (get-self-position)
+					   * (eq? (car one-piece-list) "B")))
+			      * (odd? (+ (car y) (cdr y)))))]
+		 [(and (eq? side #f) (eq? color #t))
+		  (length (lc y : y <- (car-if-not-null (lc (cdr one-piece-list) : one-piece-list <- (get-enemy-position)
+					   * (eq? (car one-piece-list) "B")))
+			      * (even? (+ (car y) (cdr y)))))]
+		 [(and (eq? side #f) (eq? color #f))
+		  (length (lc y : y <- (car-if-not-null (lc (cdr one-piece-list) : one-piece-list <- (get-enemy-position)
+					   * (eq? (car one-piece-list) "B")))
+			      * (odd? (+ (car y) (cdr y)))))]))
+		 
+	 (define (get-number-of-one-piece piece side)
+	   (if (eq? side #t)
+	       (/ (length (flatten (lc (cdr one-piece-list) : one-piece-list <- (get-self-position)
+				* (eq? (car one-piece-list) piece)))) 2)
+	       (/ (length (flatten (lc (cdr one-piece-list) : one-piece-list <- (get-enemy-position)
+				* (eq? (car one-piece-list) piece)))) 2)))
+	       
+	 (define (get-number-of-pieces)
+	   (cons
+	    (foldr (lambda (one-piece-positions processed-length)
+		     (+ (- (length one-piece-positions) 1) processed-length))
+		   0 (get-self-position))
+	    (foldr (lambda (one-piece-positions processed-length)
+		     (+ (- (length one-piece-positions) 1) processed-length))
+		   0 (get-enemy-position))))
+
 	 (define/public (king-in-check? board-pos)
 	   (define local-self-position
 	     (if (eq? (get-turn) "white")
-		 (car board-pos)
-		 (cdr board-pos)))
+		   (car board-pos)
+		   (cdr board-pos)))
 	   (define (get-king-pos)
 	     (foldr (lambda (elem found-pos)
 	   	      (if found-pos found-pos
@@ -409,17 +462,17 @@
 			  (not (capturable? board-pos (cons 6 rank) (get-turn)))
 			  (not (capturable? board-pos (cons 7 rank) (get-turn))))
 		     (if (eq? (get-turn) "white")
-			 (list (make-object complete-position%
+                         (list (make-object complete-position%
 					    (cons (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
 							       (list "R" (cons 8 rank) (cons 6 rank)))
 						  enemy-position)
-					    (flip (get-turn)) "O-O"
+					    (flip (get-turn)) (list "O-O")
 					    #f (get-sceb) #f (get-lceb)))
 			 (list (make-object complete-position%
 					    (cons enemy-position
 						  (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 7 rank)))
 							       (list "R" (cons 8 rank) (cons 6 rank))))
-					    (flip (get-turn)) "O-O"
+					    (flip (get-turn)) (list "O-O")
 					    (get-scew) #f (get-lcew) #f)))
 		     (list))
 		 (list))))
@@ -452,13 +505,13 @@
 					    (cons (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
 							       (list "R" (cons 1 rank) (cons 4 rank)))
 						  enemy-position)
-					    (flip (get-turn)) "O-O-O" 
+					    (flip (get-turn)) (list "O-O-O") 
 					    #f (get-sceb) #f (get-lceb)))
 			 (list (make-object complete-position%
 					    (cons enemy-position
 						  (change-pos2 (change-pos (list "K" (cons 5 rank) (cons 3 rank)))
 							       (list "R" (cons 1 rank) (cons 4 rank))))
-					    (flip (get-turn)) "O-O-O"
+					    (flip (get-turn)) (list "O-O-O")
 					    (get-scew) #f (get-lcew) #f)))
 		     (list))
 		 (list))))
@@ -537,18 +590,12 @@
 							      (flip (get-turn)) move 
 							      (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move)))
 						processed-list)
-					(cons (make-object complete-position% 
-							   (append-properly (send this change-pos move)
-									    (send this capture (third move)))
-							   (flip (get-turn)) move 
+					(cons (make-object complete-position%
+                                                (send this change-pos move)
+                                                (flip (get-turn)) move 
 							   (figure 0 move) (figure 1 move) (figure 2 move) (figure 3 move))
 					      processed-list)))
 				  (list) (get-all-moves)))))
-	 ;; (if (not (null? refined-castling-positions))
-	 ;; 	   (begin
-	 ;; 	     (display all-positions)
-	 ;; 	     (read))
-	 ;; 	   null)
 
 	 (define (figure num move)
 	   (cond [(and (eq? num 0) (eq? (get-turn) "white"))
